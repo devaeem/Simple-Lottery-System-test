@@ -25,14 +25,14 @@ key features:
 */
 
 //Example data
-const buyTicket = [
+const buyTicketData = [
   {
-    number: 1234,
-    amount: 1000,
+    number: 123456,
+    amount: 100,
   },
   {
     number: 58,
-    amount: 1000,
+    amount: 100,
   },
 ];
 
@@ -100,7 +100,8 @@ class LottoService {
       }
       this.customerTickets.push(ticket);
     });
-    console.log("ซื้อหวยเรียบร้อย:", tickets);
+    console.log(`ซื้อหวยเรียบร้อย:`, tickets );
+
   }
 
   /**
@@ -160,7 +161,8 @@ class LottoService {
       throw new Error("ไม่สามารถสุ่มเลขได้ครบตามจำนวนที่ต้องการ");
     }
 
-    return randomNumbers;
+   return randomNumbers;
+
   }
 
   /**
@@ -170,7 +172,9 @@ class LottoService {
     if (this.drawResult) {
       throw new Error("ได้ออกผลรางวัลไปแล้ว");
     }
-    this.drawResult = this.generateRandomNumber(6).toString().padStart(6, '0');
+    // const hh = '6'
+    //this.generateRandomNumber(6).toString().padStart(6, '0');
+    this.drawResult = '56'
     return this.drawResult;
   }
 
@@ -182,20 +186,29 @@ class LottoService {
       throw new Error("ยังไม่ได้ออกผลรางวัล");
     }
 
+    if (this.customerTickets.length === 0) {
+      throw new Error("ไม่มีรายการซื้อหวย กรุณาซื้อหวยก่อนตรวจรางวัล");
+    }
+
     const winners: WinningTicket[] = [];
 
     this.customerTickets.forEach(ticket => {
-      const ticketNumber = ticket.number.toString().padStart(6, '0');
-      const digits = ticketNumber.length;
-      const lastDigits = this.drawResult!.slice(-digits);
+      const ticketNumber = ticket.number.toString();
+      const ticketDigits = ticketNumber.length;
 
-      if (ticketNumber.slice(-digits) === lastDigits) {
-        const prize = ticket.amount * this.PAYOUT_MULTIPLIERS[digits as keyof typeof this.PAYOUT_MULTIPLIERS];
-        winners.push({
-          number: ticket.number,
-          prize,
-          digits
-        });
+      // ตรวจทุกความยาวที่เป็นไปได้จากเลขที่ซื้อ
+      for (let checkDigits = 1; checkDigits <= ticketDigits; checkDigits++) {
+        const lastDigitsOfDraw = this.drawResult!.slice(-checkDigits);
+        const lastDigitsOfTicket = ticketNumber.slice(-checkDigits);
+
+        if (lastDigitsOfTicket === lastDigitsOfDraw) {
+          const prize = ticket.amount * this.PAYOUT_MULTIPLIERS[checkDigits as keyof typeof this.PAYOUT_MULTIPLIERS];
+          winners.push({
+            number: ticket.number,
+            prize,
+            digits: checkDigits
+          });
+        }
       }
     });
 
@@ -213,18 +226,46 @@ class LottoService {
   }
 
   private displayResults(winners: WinningTicket[]): void {
-    if (winners.length === 0) {
-      console.log("\nไม่มีผู้ถูกรางวัลในงวดนี้");
+    if (this.customerTickets.length === 0) {
+      console.log("\nไม่มีรายการซื้อหวย กรุณาซื้อหวยก่อนตรวจรางวัล");
       return;
     }
 
-    console.log("\nผลการตรวจรางวัล:");
+    console.log(`\nผลการออกรางวัล: ${this.drawResult}`);
+    console.log(`จำนวนตั๋วที่ซื้อทั้งหมด: ${this.customerTickets.length} ใบ`);
+
+    if (winners.length === 0) {
+      console.log("ไม่มีผู้ถูกรางวัลในงวดนี้");
+      return;
+    }
+
+    // จัดกลุ่มตามจำนวนหลัก
+    const winsByDigits: { [key: number]: WinningTicket[] } = {};
+    let totalPrize = 0;
+
     winners.forEach(winner => {
-      console.log(
-        `เลข ${winner.number} ถูกรางวัล ${winner.digits} หลัก ` +
-        `ได้รับเงิน ${winner.prize.toLocaleString()} บาท`
-      );
+      if (!winsByDigits[winner.digits]) {
+        winsByDigits[winner.digits] = [];
+      }
+      winsByDigits[winner.digits].push(winner);
+      totalPrize += winner.prize;
     });
+
+    console.log("\nสรุปผลการถูกรางวัล:");
+    console.log(`จำนวนถูกรางวัลทั้งหมด: ${winners.length} รางวัล`);
+
+    // แสดงผลแยกตามจำนวนหลัก
+    Object.keys(winsByDigits)
+      .sort((a, b) => Number(b) - Number(a)) // เรียงจากหลักมากไปน้อย
+      .forEach(digits => {
+        const digitWinners = winsByDigits[Number(digits)];
+        console.log(`\nถูกรางวัลเลข ${digits} หลัก: ${digitWinners.length} รางวัล`);
+        digitWinners.forEach(winner => {
+          console.log(`  - เลข ${winner.number} ได้รับเงิน ${winner.prize.toLocaleString()} บาท`);
+        });
+      });
+
+    console.log(`\nรวมเงินรางวัลทั้งหมด: ${totalPrize.toLocaleString()} บาท`);
   }
 }
 
@@ -234,18 +275,20 @@ const demo = () => {
 
   // 1. ซื้อหวยแบบระบุเลข
   console.log("\n1. ซื้อหวยแบบระบุเลข:");
-  lotto.buyTicket([
-    { number: 123456, amount: 100 },  // 6 หลัก
-    { number: 456, amount: 100 },     // 3 หลัก
-    { number: 56, amount: 100 }       // 2 หลัก
-  ]);
+  lotto.buyTicket(buyTicketData)
+  // lotto.buyTicket([
+  //   { number: 123456, amount: 100 },  // 6 หลัก
+  //   { number: 456, amount: 100 },     // 3 หลัก
+  //   { number: 56, amount: 100 }       // 2 หลัก
+  // ]);
+  // lotto.buyTicket(buyTicketData)
 
   // 2. ซื้อหวยแบบสุ่มเลข
   console.log("\n2. ซื้อหวยแบบสุ่มเลข:");
   const randomNumbers = lotto.getRandomNumber(
-    4,                    // 4 หลัก
-    2,                    // 2 เลข
-    100,                  // 100 บาท
+    4,                    // จำนวนหลัก
+    3,                    // จำนวนชุด
+    100,                  // จำนวนเงิน
     [                     // กำหนดเลขตายตัว
       { digit: 2, number: 5 },  // หลักที่ 2 เป็น 5
       { digit: 1, number: 6 }   // หลักที่ 1 เป็น 6
