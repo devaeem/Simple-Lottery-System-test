@@ -24,8 +24,20 @@ key features:
 - check win ticket: check winning prize by input all ticket that customer buy and return which number is win and prize
 */
 
+// Ticketr interfaces
+interface Ticket {
+  number: number;
+  amount: number;
+}
+
+// FixedDigit interfaces
+interface FixedDigit {
+  digit: number;
+  number: number;
+}
+
 //Example data
-const buyTicketData = [
+const buyTicketData: Ticket[] = [
   {
     number: 123456,
     amount: 100,
@@ -40,7 +52,7 @@ const buyTicketData = [
 const buyDigit = 4;
 const buyNumber = 10;
 const buyAmount = 1000;
-const fixedDigit = [
+const fixedDigit: FixedDigit[] = [
   {
     digit: 3,
     number: 8,
@@ -52,23 +64,16 @@ const fixedDigit = [
 ];
 // mean that customer want to buy 4 digits, 10 number, each 1000 baht,fxied third digit is 8 and fixed second digit is 6
 
-// Ticketr interfaces
-interface Ticket {
-  number: number;
-  amount: number;
-}
-
-// FixedDigit interfaces
-interface FixedDigit {
-  digit: number;
-  number: number;
-}
-
 // WinningTicket interfaces
 interface WinningTicket {
   number: number;
   prize: number;
   digits: number;
+}
+
+interface Discount {
+  number: number;
+  amount: number;
 }
 
 // LottoService class
@@ -77,19 +82,19 @@ class LottoService {
   private drawResult: string | null = null;
 
   private readonly PAYOUT_MULTIPLIERS = {
-    1: 10,        // 1 หลัก จ่าย 10 เท่า
-    2: 100,       // 2 หลัก จ่าย 100 เท่า
-    3: 1000,      // 3 หลัก จ่าย 1,000 เท่า
-    4: 10000,     // 4 หลัก จ่าย 10,000 เท่า
-    5: 100000,    // 5 หลัก จ่าย 100,000 เท่า
-    6: 1000000    // 6 หลัก จ่าย 1,000,000 เท่า
+    1: 10, // 1 หลัก จ่าย 10 เท่า
+    2: 100, // 2 หลัก จ่าย 100 เท่า
+    3: 1000, // 3 หลัก จ่าย 1,000 เท่า
+    4: 10000, // 4 หลัก จ่าย 10,000 เท่า
+    5: 100000, // 5 หลัก จ่าย 100,000 เท่า
+    6: 1000000, // 6 หลัก จ่าย 1,000,000 เท่า
   } as const;
 
   /**
    * ซื้อหวย - สามารถซื้อได้หลายเลข หลายหลัก พร้อมระบุจำนวนเงิน
    */
   public buyTicket(tickets: Ticket[]): void {
-    tickets.forEach(ticket => {
+    tickets.forEach((ticket) => {
       // ตรวจสอบความถูกต้องของตัวเลข
       if (!this.isValidNumber(ticket.number)) {
         throw new Error(`เลขหวยไม่ถูกต้อง: ${ticket.number}`);
@@ -100,8 +105,7 @@ class LottoService {
       }
       this.customerTickets.push(ticket);
     });
-    console.log(`ซื้อหวยเรียบร้อย:`, tickets );
-
+    console.log(`ซื้อหวยเรียบร้อย:`, tickets);
   }
 
   /**
@@ -138,13 +142,16 @@ class LottoService {
     while (randomNumbers.length < quantity && attempts < maxAttempts) {
       attempts++;
       let randomNum = this.generateRandomNumber(digitCount);
-      let numStr = randomNum.toString().padStart(digitCount, '0');
+      let numStr = randomNum.toString().padStart(digitCount, "0");
 
       // ใส่เลขที่กำหนดตามตำแหน่ง
-      fixedDigits.forEach(fixed => {
+      fixedDigits.forEach((fixed) => {
         if (fixed.digit <= digitCount) {
           const position = digitCount - fixed.digit;
-          numStr = numStr.substring(0, position) + fixed.number + numStr.substring(position + 1);
+          numStr =
+            numStr.substring(0, position) +
+            fixed.number +
+            numStr.substring(position + 1);
         }
       });
 
@@ -161,8 +168,7 @@ class LottoService {
       throw new Error("ไม่สามารถสุ่มเลขได้ครบตามจำนวนที่ต้องการ");
     }
 
-   return randomNumbers;
-
+    return randomNumbers;
   }
 
   /**
@@ -172,9 +178,9 @@ class LottoService {
     if (this.drawResult) {
       throw new Error("ได้ออกผลรางวัลไปแล้ว");
     }
-    // const hh = '6'
     //this.generateRandomNumber(6).toString().padStart(6, '0');
-    this.drawResult = '56'
+    this.drawResult = "56";
+    // this.drawResult = this.generateRandomNumber(6).toString().padStart(6,'0');
     return this.drawResult;
   }
 
@@ -192,7 +198,7 @@ class LottoService {
 
     const winners: WinningTicket[] = [];
 
-    this.customerTickets.forEach(ticket => {
+    this.customerTickets.forEach((ticket) => {
       const ticketNumber = ticket.number.toString();
       const ticketDigits = ticketNumber.length;
 
@@ -202,11 +208,15 @@ class LottoService {
         const lastDigitsOfTicket = ticketNumber.slice(-checkDigits);
 
         if (lastDigitsOfTicket === lastDigitsOfDraw) {
-          const prize = ticket.amount * this.PAYOUT_MULTIPLIERS[checkDigits as keyof typeof this.PAYOUT_MULTIPLIERS];
+          const prize =
+            ticket.amount *
+            this.PAYOUT_MULTIPLIERS[
+              checkDigits as keyof typeof this.PAYOUT_MULTIPLIERS
+            ];
           winners.push({
             number: ticket.number,
             prize,
-            digits: checkDigits
+            digits: checkDigits,
           });
         }
       }
@@ -214,13 +224,14 @@ class LottoService {
 
     this.displayResults(winners);
     return winners;
-  }
+  }     
 
-  // Private helper methods
+  // ฟังก์ชันนี้ใช้สำหรับการสุ่มตัวเลขตามจำนวนหลักที่ระบุ
   private generateRandomNumber(digits: number): number {
     return Math.floor(Math.random() * Math.pow(10, digits));
   }
 
+  //ฟังก์ชันนี้ใช้ตรวจสอบความถูกต้องของเลขว่าเป็นจำนวนเต็มและอยู่ในช่วงที่กำหนด
   private isValidNumber(number: number): boolean {
     return Number.isInteger(number) && number >= 0 && number < 1000000;
   }
@@ -243,7 +254,7 @@ class LottoService {
     const winsByDigits: { [key: number]: WinningTicket[] } = {};
     let totalPrize = 0;
 
-    winners.forEach(winner => {
+    winners.forEach((winner) => {
       if (!winsByDigits[winner.digits]) {
         winsByDigits[winner.digits] = [];
       }
@@ -257,15 +268,36 @@ class LottoService {
     // แสดงผลแยกตามจำนวนหลัก
     Object.keys(winsByDigits)
       .sort((a, b) => Number(b) - Number(a)) // เรียงจากหลักมากไปน้อย
-      .forEach(digits => {
+      .forEach((digits) => {
         const digitWinners = winsByDigits[Number(digits)];
-        console.log(`\nถูกรางวัลเลข ${digits} หลัก: ${digitWinners.length} รางวัล`);
-        digitWinners.forEach(winner => {
-          console.log(`  - เลข ${winner.number} ได้รับเงิน ${winner.prize.toLocaleString()} บาท`);
+        console.log(
+          `\nถูกรางวัลเลข ${digits} หลัก: ${digitWinners.length} รางวัล`
+        );
+        digitWinners.forEach((winner) => {
+          console.log(
+            `  - เลข ${
+              winner.number
+            } ได้รับเงิน ${winner.prize.toLocaleString()} บาท`
+          );
         });
       });
 
     console.log(`\nรวมเงินรางวัลทั้งหมด: ${totalPrize.toLocaleString()} บาท`);
+  }
+
+  public discount(tickets: Discount[]): Discount[] {
+    return tickets
+      .filter((ticket) => {
+        const hasDiscount = ticket.number.toString().length >= 5;
+        if (!hasDiscount) {
+          console.log(`เลข ${ticket.number} ไม่ได้รับส่วนลด`);
+        }
+        return hasDiscount;
+      })
+      .map((ticket) => ({
+        ...ticket,
+        amount: ticket.amount * 0.9, // Apply 10% discount
+      }));
   }
 }
 
@@ -275,23 +307,24 @@ const demo = () => {
 
   // 1. ซื้อหวยแบบระบุเลข
   console.log("\n1. ซื้อหวยแบบระบุเลข:");
-  lotto.buyTicket(buyTicketData)
-  // lotto.buyTicket([
-  //   { number: 123456, amount: 100 },  // 6 หลัก
-  //   { number: 456, amount: 100 },     // 3 หลัก
-  //   { number: 56, amount: 100 }       // 2 หลัก
-  // ]);
+  // lotto.buyTicket(buyTicketData);
+  lotto.buyTicket([
+    // { number: 123456, amount: 100 },  // 6 หลัก
+    // { number: 456, amount: 100 },     // 3 หลัก
+    { number: 12333, amount: 100 }, // 2 หลัก
+  ]);
   // lotto.buyTicket(buyTicketData)
 
   // 2. ซื้อหวยแบบสุ่มเลข
   console.log("\n2. ซื้อหวยแบบสุ่มเลข:");
   const randomNumbers = lotto.getRandomNumber(
-    4,                    // จำนวนหลัก
-    3,                    // จำนวนชุด
-    100,                  // จำนวนเงิน
-    [                     // กำหนดเลขตายตัว
-      { digit: 2, number: 5 },  // หลักที่ 2 เป็น 5
-      { digit: 1, number: 6 }   // หลักที่ 1 เป็น 6
+    4, // จำนวนหลัก
+    3, // จำนวนชุด
+    100, // จำนวนเงิน
+    [
+      // กำหนดเลขตายตัว
+      { digit: 2, number: 1 }, // หลักที่ 2 เป็น 5
+      { digit: 1, number: 1 }, // หลักที่ 1 เป็น 6
     ]
   );
   console.log("เลขที่สุ่มได้:", randomNumbers);
@@ -299,6 +332,11 @@ const demo = () => {
   // 3. ดูรายการหวยที่ซื้อทั้งหมด
   console.log("\n3. รายการหวยที่ซื้อทั้งหมด:");
   console.log(lotto.getTickets());
+
+  //3.1 ส่วนลด
+  const getTic = lotto.getTickets();
+  const disc = lotto.discount(getTic);
+  console.log("\n3.1 .ส่วนลดพิเศษ:", disc);
 
   // 4. ออกผลรางวัล
   console.log("\n4. ผลการออกรางวัล:");
@@ -312,5 +350,3 @@ const demo = () => {
 
 // รันตัวอย่าง
 demo();
-
-
